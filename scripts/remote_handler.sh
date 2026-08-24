@@ -27,12 +27,10 @@ wait_for_repo_ready() {
 ensure_dists_repo_exists() {
     local package_name="$1"
     local full_repo="$dists_owner/$package_name"
-	sleep 1
     if gh repo view "$full_repo" >/dev/null 2>&1; then
         return
     fi
     echo "creating repo from template: $full_repo"
-	sleep 1
     gh repo create "$full_repo" --template "$dists_template_repo" --public
     wait_for_repo_ready "$full_repo"
 }
@@ -79,12 +77,10 @@ upload_deb_to_dists_repo() {
     fi
 
     ensure_dists_repo_exists "$package_name"
-	sleep 1
     if ! create_release_if_missing "github.com/$dists_owner/$package_name" "$release_version"; then
         echo "$deb_name failed to create release for $dists_owner/$package_name:$release_version"
         return 1
     fi
-	sleep 1
     if ! gh release upload -R "github.com/$dists_owner/$package_name" "$release_version" "$deb_name" --clobber; then
         echo "$deb_name issues while uploading to $dists_owner/$package_name:$release_version"
     fi
@@ -133,7 +129,6 @@ upload_debs() {
     done
     for deb_name in $(cat $non_uploaded_list); do
         local package_name_tag=$(echo $deb_name | cut -d '_' -f 1)
-		sleep 1
         if ! gh release view -R "github.com/$owner/$repo" "$package_name_tag" >/dev/null 2>&1; then
             if ! output=$(gh release create -R "github.com/$owner/$repo" "$package_name_tag" -n "$package_name_tag" 2>&1); then
                 if echo "$output" | grep -Eqi 'already exists|tag .* already exists'; then
@@ -163,7 +158,6 @@ remove_redundent_deb() {
     list_redundent_deb
     echo "removing redundent debs from remote"
     for deb in $(cat $redundent_deb_list);do
-		sleep 1
         gh release delete-asset -R github.com/$owner/$repo $tag $deb -y
         echo "removed $deb"
     done
@@ -176,7 +170,6 @@ remove_archive_from_temp_gh() {
     # However repository consistency checker will catch any unsuccesful checks. 
     cd $BASE_DIR
     for temp in ./*.tar;do
-		sleep 1
         if gh release delete-asset -R github.com/$owner/tur 0.1 "$(basename $temp)" -y;then
 
             echo "$temp removed!!"
